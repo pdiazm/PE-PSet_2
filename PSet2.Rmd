@@ -1,0 +1,68 @@
+---
+title: "PSet_2"
+author: "Paulino Diaz"
+date: "February 5, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(haven)
+library(here)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part 1
+
+### 1.
+
+If we wished to identify the effect of the number of children on how much a woman works, in an experimental world, we would be able to randomly assign different number of children to a significant sample of women, and regress this against their hours-worked-per-week. The coefficient of the variable _number of children_ would give us the average treatment effect (ATE) of one more child on hours-worked-per-week. The random assignment of different number of children would ensure our estimate is unbiased. This assumes, however, that the ATE is homogenous and constant across different total number of children. It also assumes that everyone is a complier.
+
+If we instead believe the ATE changes depending on the total number of children, we might want to create different subsets of the experimental sample for different total number of children. The subsets would include combinations of women with n and n-1 total children, and compare their change in hours worked. Repeating the above regression would give us a LATE for each of the different subsets.
+
+Additionally, if we believe there are non-compliers, the above regression would give us the ITT effect - which we could then weight against the probability of being a complier to get the ATT. If the effects are homogenous between compliers and non-compliers, the ATT = ATE.
+
+### 2
+
+* The before-after estimator would compare hours-worked-per-week for each woman, before and after getting one more child.
+* The naive estimator would assume there is perfect compliance when there isn't - comparing the treatment and control groups without weighting for compliers - giving us an ITT effect instead of an ATE.
+* We could have selection bias on unobservables, if the non-compliers are different from the compliers in ways we can't observe, and we could also have ommitted variable bias, if the compliers and non-compliers differ in things like gender, age, income level, etc.
+
+### 3a
+
+The estimated treatment parameter is the LATE, and it applies to the individuals in the sample whose fertility has been affected by having two same-sex children.
+
+### 3b
+
+* Compliers are the women who have a third child, but only because their first two children are of the same-sex.
+* Defiers are the women who would have had a third child, but they didn't because their first two children are of the same sex.
+* Always-takers are the women who have a third child, regardless of the sex of their previous two children.
+* Never-takers are the women who would never have a third child, regardless of the sex of their previous two children.
+
+### 3c
+
+The exclusion restriction requires that having two same-sex children does not affect hours-worked-per-week, except through the increased likelihood of having a third child. That is to say, that the only link between hours-worked-per-week and the sex of the first two children is through the likelihood of having a third child. This implies that having two-same-sex children is completely random and unrelated to other observed or unobserved factors that determine fertility and labor force participation of the mother.
+
+If the dependent variable is married women's husbands' income, then the exclusion restriction could be violated if we think the sex of the child affects the father's commitment to the family or changes the way parents treat their children.
+
+### 3e
+
+The monotonicity assumption implies that the effect of the instrument is always weakly increasing. This means that women who have two same-sex children are only more or equally likely to have one more child (none are less likely to have one more child). In other words, there are no defiers in the sample.
+
+### 4
+
+The study provides valuable information on the effect on labor supply for women who go from two to more than two children, and can help policymakers decide the magnitude of the subsidy for this group.However, these results are LATE, and not representative of the impact of childbearing in general since the sample is restricted to women going from two to more than two children and in a relatively young age-group. Older women with larger family sizes could require a very different intervention.
+
+### 5
+
+```{r, q5}
+fertility_data <- read_dta(here("children-data.dta")) %>%
+  spread(key = birthno, value = boy)
+
+
+
+
+```
+
+
