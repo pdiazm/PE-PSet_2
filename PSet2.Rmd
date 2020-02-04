@@ -10,6 +10,8 @@ library(tidyverse)
 library(haven)
 library(here)
 library(knitr)
+library(sandwich)
+library(lmtest)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -57,12 +59,39 @@ The study provides valuable information on the effect on labor supply for women 
 ### 5
 
 ```{r, q5}
-fertility_data <- read_dta(here("children-data.dta")) %>%
-  spread(key = birthno, value = boy)
+fertility_data <- read_dta(here("children-data.dta"))
 
-
-
-
+clean_dta <- fertility_data %>%
+  select(-childid) %>%
+  unite(boy_twins, boy, twins) %>%
+  pivot_wider(names_from = birthno, values_from = boy_twins) %>%
+  separate("1", into = c("birth1", "twin1")) %>%
+  separate("2", into = c("birth2", "twin2")) %>%
+  select(-twin1) %>%
+  mutate(twopluskids = case_when(nrchildren >= 3 ~ 1,
+                               nrchildren == 2 ~ 0),
+         samesex = case_when(birth1 == birth2 ~ 1,
+                             birth1 != birth2 ~ 0),
+         nodiploma = case_when(educm < 12 ~ 1,
+                               educm >= 12 ~ 0))
 ```
 
+### 6
 
+```{r, q6}
+twoplus_fit <- lm(hourswm ~ twopluskids , clean_dta)
+
+coeftest(twoplus_fit, vcov = vcovHC(twoplus_fit))
+```
+
+### 7
+```{r, q7}
+twoplus_controls <- lm(hourswm ~ twopluskids + yobm + nodiploma + collegem, clean_dta)
+
+coeftest(twoplus_controls, vcov = vcovHC(twoplus_controls))
+```
+
+### 8
+```{r, q8}
+
+```
