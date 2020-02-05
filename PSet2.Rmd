@@ -12,6 +12,9 @@ library(here)
 library(knitr)
 library(sandwich)
 library(lmtest)
+library(AER)
+library(ivpack)
+library(stargazer)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -19,7 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1.
 
-If we wished to identify the effect of the number of children on how much a woman works, in an experimental world, we would be able to randomly assign different number of children to a significant sample of women, and regress this against their hours-worked-per-week. The coefficient of the variable _number of children_ would give us the average treatment effect (ATE) of one more child on hours-worked-per-week. The random assignment of different number of children would ensure our estimate is unbiased. This assumes, however, that the ATE is homogenous and constant across different total number of children. It also assumes that everyone is a complier.
+If we wished to identify the effect of the number of children on how much a woman works, in an experimental world, we would be able to randomly assign different number of children to a significant sample of women, and regress this against their hours-worked-per-week. The coefficient of the variable _number of children_ would give us the average treatment effect (ATE) of one more child on hours-worked-per-week. The random assignment of different number of children would ensure our estimate is unbiased. This assumes, however, that the effect is homogenous and constant across different total number of children. It also assumes that everyone is a complier.
 
 If we instead believe the ATE changes depending on the total number of children, we might want to create different subsets of the experimental sample for different total number of children. The subsets would include combinations of women with n and n-1 total children, and compare their change in hours worked. Repeating the above regression would give us a LATE for each of the different subsets.
 
@@ -46,7 +49,7 @@ The estimated treatment parameter is the LATE, and it applies to the individuals
 
 The exclusion restriction requires that having two same-sex children does not affect hours-worked-per-week, except through the increased likelihood of having a third child. That is to say, that the only link between hours-worked-per-week and the sex of the first two children is through the likelihood of having a third child. This implies that having two-same-sex children is completely random and unrelated to other observed or unobserved factors that determine fertility and labor force participation of the mother.
 
-If the dependent variable is married women's husbands' income, then the exclusion restriction could be violated if we think the sex of the child affects the father's commitment to the family or changes the way parents treat their children.
+If the dependent variable is married women's husbands' income, then the exclusion restriction could be violated if we think the sex of the child affects the father's commitment to the family or changes the way father's treat their children.
 
 ### 3e
 
@@ -54,7 +57,7 @@ The monotonicity assumption implies that the effect of the instrument is always 
 
 ### 4
 
-The study provides valuable information on the effect on labor supply for women who go from two to more than two children, and can help policymakers decide the magnitude of the subsidy for this group.However, these results are LATE, and not representative of the impact of childbearing in general since the sample is restricted to women going from two to more than two children and in a relatively young age-group. Older women with larger family sizes could require a very different intervention.
+The study provides valuable information on the effect on labor supply for women who go from two to more than two children, and can help policymakers decide the magnitude of the subsidy for this group. However, these results are LATE, and not representative of the impact of childbearing in general since the sample is restricted to women going from two to more than two children and in a relatively young age-group. Older women with larger family sizes could require a very different intervention.
 
 ### 5
 
@@ -78,20 +81,121 @@ clean_dta <- fertility_data %>%
 
 ### 6
 
-```{r, q6}
-twoplus_fit <- lm(hourswm ~ twopluskids , clean_dta)
+```{r, q6, echo=F, warning=F}
+twoplus_fit <- lm(hourswm ~ twopluskids, clean_dta)
 
-coeftest(twoplus_fit, vcov = vcovHC(twoplus_fit))
+rob.se_6 <- coeftest(twoplus_fit, vcov = vcovHC(twoplus_fit))
+
+stargazer(twoplus_fit, type = "text", 
+          title = "Simple OLS with Robust SE",
+          covariate.labels = c("More Than Two Children"),
+          dep.var.labels = c("Hours-Worked-Per-Week of Mother"),
+          se = list(rob.se_6[,"Std. Error"]),
+          align = T,
+          digits = 2)
 ```
+The results of the above regression estimate that having more than two children reduces a mother's average hours-worked-per-week by 3.5 hours. However, we should be skeptical of doing a causal interpretation of these results as it is likely that a mother's fertility and labor supply are jointly determined.
 
 ### 7
-```{r, q7}
+
+```{r, q7, echo=F, warning=F}
 twoplus_controls <- lm(hourswm ~ twopluskids + yobm + nodiploma + collegem, clean_dta)
 
-coeftest(twoplus_controls, vcov = vcovHC(twoplus_controls))
+rob.se_7 <- coeftest(twoplus_controls, vcov = vcovHC(twoplus_controls))
+
+stargazer(twoplus_controls, type = "text", 
+          title = "OLS with Controls and Robust SE",
+          covariate.labels = c("More Than Two Children", "Mother's Year of Birth",
+                             "No Highschool Diploma", "Has College Degree"),
+          dep.var.labels = c("Hours-Worked-Per-Week of Mother"),
+          se = list(rob.se_7[,"Std. Error"]),
+          align = T,
+          digits = 2)
 ```
 
-### 8
-```{r, q8}
+The results of the above regression show that adding controls increases the magnitude of the effect of having more than two children, reducing a mother's hours-worked-per-week, on average, by 3.8 hours. The relationship between education and hours-worked-per-week also appears to be negative for both mother's without a highschool diploma and mother's who have a college diploma. However, the effect for no diploma is not statistically significant. Considering we do not observe the effect for those who have a highschool diploma, a possible story for explaining this negative relationship could be that not earning a highschool diploma decreases your labor prospects which negatively impacts your labor supply. Additionally earning a college degree increases your productivity, labor prospects and wages, allowing you to earn more while working less - thus also reducing your overall labor supply. Such a scenario would require that the unobserved effect of a highschool diploma is positive, increasing your labor prospects compared to those without a highschool diploma - while still requiring you to work more than those with a college diploma in order to earn a living wage.
+
+Again, however, there are still reasons to believe that our variable of interest, $More Than Two Children$, and our outcome are jointly determined - which doesn't allow us to make a causal inference.
+
+### 8a
+
+```{r, q8a, echo=F, warning=F}
+samesex_two <- lm(twopluskids ~ samesex + yobm + nodiploma + collegem, clean_dta)
+
+rob.se_8a <- coeftest(samesex_two, vcov = vcovHC(samesex_two))
+
+stargazer(samesex_two, type = "text", 
+          title = "First Stage Regression: Two Same-Sex Children",
+          covariate.labels = c("Same-sex", "Mother's Year of Birth",
+                             "No Highschool Diploma", "Has College Degree"),
+          dep.var.labels = c("More Than Two Kids"),
+          se = list(rob.se_8a[,"Std. Error"]),
+          align = T,
+          digits = 2)
+```
+
+The above first stage regression shows that our instrument, $samesex$, is positively related with the probability of having more than two children - increasing this average probability by 6 percent. Our estimate of this effect is both strong and statistically significant, thus satisfying the instrument condition. If we also believe that having two same-sex children is a truly random occurrence, then the sex mix of a family is uncorrelated with a mother's labor supply (except through fertility) and our exclusion restriction is also satsified, making this a valid instrument.
+
+### 8b
+
+```{r, q8b, echo=F, warning=F}
+samesex_2sls <- ivreg(hourswm ~ twopluskids + yobm + nodiploma + collegem | samesex + 
+                        yobm + nodiploma + collegem, data = clean_dta)
+
+rob.se_8b <- summary(samesex_2sls, vcov = sandwich)
+
+stargazer(samesex_2sls, type = "text", 
+          title = "2SLS: Two Same-Sex Children",
+          covariate.labels = c("More Than Two Children", "Mother's Year of Birth",
+                             "No Highschool Diploma", "Has College Degree"),
+          dep.var.labels = c("Hours-Worked-Per-Week of Mother"),
+          se = list(rob.se_8b$coefficients[,"Std. Error"]),
+          align = T,
+          digits = 2)
 
 ```
+
+The treatment parameter for the above regression gives us the LATE of having more than two children when the first two children have the same sex. This gives us the effect for mothers with more than two children, whose fertility has been affected by having two same-sex children. All else equal, having more than two kids reduces this group's average hours-worked-per-week by 4.8 hours. Given we have a valid instrument, we can interpret these results causally, _but only for this group_.
+
+### 9a
+First stage:
+$$TwoPlusKids_i = \pi_0 + \pi_1*Twins_i + \pi_2*YearOfBirthM_i + \pi_3*NoDiploma_i + \pi_4*CollegeM_i + \nu_i$$
+Second stage:
+$$HoursWorkedM_i = \beta_0 + \delta*\hat{TwoPlusKids_i} + \beta_2*YearOfBirthM_i + \beta_3*NoDiploma_i + \beta_4*CollegeM_i + \epsilon_i$$
+
+### 9b
+```{r, q9b, echo=F, warning=F}
+twins_two <- lm(twopluskids ~ twin2 + yobm + nodiploma + collegem, clean_dta)
+
+rob.se_9b <- coeftest(twins_two, vcov = vcovHC(twins_two))
+
+stargazer(twins_two, type = "text", 
+          title = "First Stage Regression: Twins",
+          covariate.labels = c("Twins", "Mother's Year of Birth",
+                             "No Highschool Diploma", "Has College Degree"),
+          dep.var.labels = c("More Than Two Kids"),
+          se = list(rob.se_9b[,"Std. Error"]),
+          align = T,
+          digits = 2)
+```
+
+The above first stage regression shows that our instrument, $Twins$, is positively related to the probability of having more than two children - this is of course obviously true given that having twins in the second birth always means that the mother has more than two children. This satisfies our instrument condition. However, using twins as an instrument might fail to satisfy the exclusion restriction of our instrument, if we think that twinning probabilities appear to be correlated with some observed characteristics of the mother. The validity of the instrument will depend on whether we can control for these characteristics.
+
+### 9c
+```{r, q9c, echo=F, warning=F}
+twins_2sls <- ivreg(hourswm ~ twopluskids + yobm + nodiploma + collegem | twin2 + 
+                        yobm + nodiploma + collegem, data = clean_dta)
+
+rob.se_9c <- summary(twins_2sls, vcov = sandwich)
+
+stargazer(twins_2sls, type = "text", 
+          title = "2SLS: Twins",
+          covariate.labels = c("More Than Two Children", "Mother's Year of Birth",
+                             "No Highschool Diploma", "Has College Degree"),
+          dep.var.labels = c("Hours-Worked-Per-Week of Mother"),
+          se = list(rob.se_9c$coefficients[,"Std. Error"]),
+          align = T,
+          digits = 2)
+```
+
+The treatment parameter for the above regression gives us the LATE of having more than two children due to a twin in the second birth. This effect is for all mothers who have had more than two children due to twinning. According to the results, having more than two kids due to twinning reduces this group's average hours-worked-per-week by 1.5 hours - however, this result is not statistically significant. Even if it were, the magnitude of the effect is much smaller than for women who have a third child due to the gender of their first two children. A possible explanation for this, presented in the Angrist paper, could be the difference in ages between third childs born out of twinning and those that aren't. This assumes that the effect of children on the labor supply is different depending on their age.
