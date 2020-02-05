@@ -86,7 +86,7 @@ twoplus_fit <- lm(hourswm ~ twopluskids, clean_dta)
 
 rob.se_6 <- coeftest(twoplus_fit, vcov = vcovHC(twoplus_fit))
 
-stargazer(twoplus_fit, type = "text", 
+stargazer(twoplus_fit, type = "text", style = "qje",
           title = "Simple OLS with Robust SE",
           covariate.labels = c("More Than Two Children"),
           dep.var.labels = c("Hours-Worked-Per-Week of Mother"),
@@ -103,7 +103,7 @@ twoplus_controls <- lm(hourswm ~ twopluskids + yobm + nodiploma + collegem, clea
 
 rob.se_7 <- coeftest(twoplus_controls, vcov = vcovHC(twoplus_controls))
 
-stargazer(twoplus_controls, type = "text", 
+stargazer(twoplus_controls, type = "text", style = "qje",
           title = "OLS with Controls and Robust SE",
           covariate.labels = c("More Than Two Children", "Mother's Year of Birth",
                              "No Highschool Diploma", "Has College Degree"),
@@ -124,7 +124,7 @@ samesex_two <- lm(twopluskids ~ samesex + yobm + nodiploma + collegem, clean_dta
 
 rob.se_8a <- coeftest(samesex_two, vcov = vcovHC(samesex_two))
 
-stargazer(samesex_two, type = "text", 
+stargazer(samesex_two, type = "text", style = "qje",
           title = "First Stage Regression: Two Same-Sex Children",
           covariate.labels = c("Same-sex", "Mother's Year of Birth",
                              "No Highschool Diploma", "Has College Degree"),
@@ -144,7 +144,7 @@ samesex_2sls <- ivreg(hourswm ~ twopluskids + yobm + nodiploma + collegem | same
 
 rob.se_8b <- summary(samesex_2sls, vcov = sandwich)
 
-stargazer(samesex_2sls, type = "text", 
+stargazer(samesex_2sls, type = "text", style = "qje",
           title = "2SLS: Two Same-Sex Children",
           covariate.labels = c("More Than Two Children", "Mother's Year of Birth",
                              "No Highschool Diploma", "Has College Degree"),
@@ -169,7 +169,7 @@ twins_two <- lm(twopluskids ~ twin2 + yobm + nodiploma + collegem, clean_dta)
 
 rob.se_9b <- coeftest(twins_two, vcov = vcovHC(twins_two))
 
-stargazer(twins_two, type = "text", 
+stargazer(twins_two, type = "text", style = "qje",
           title = "First Stage Regression: Twins",
           covariate.labels = c("Twins", "Mother's Year of Birth",
                              "No Highschool Diploma", "Has College Degree"),
@@ -188,7 +188,7 @@ twins_2sls <- ivreg(hourswm ~ twopluskids + yobm + nodiploma + collegem | twin2 
 
 rob.se_9c <- summary(twins_2sls, vcov = sandwich)
 
-stargazer(twins_2sls, type = "text", 
+stargazer(twins_2sls, type = "text", style = "qje",
           title = "2SLS: Twins",
           covariate.labels = c("More Than Two Children", "Mother's Year of Birth",
                              "No Highschool Diploma", "Has College Degree"),
